@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFS Global Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="card">
+            <h1>VFS Bot Kontrol</h1>
+            
+            <div class="input-group">
+                <label>Email Adresi</label>
+                <input type="email" id="email" placeholder="vfs_hesabim@mail.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Şifre</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            
+            <div class="input-group">
+                <label>Referans Numaraları (Virgül ile ayırın)</label>
+                <input type="text" id="refs" placeholder="FRA1IZ20267002155, ...">
+            </div>
+            
+            <button id="start-btn">
+                <span>Botu Başlat</span>
+            </button>
+            
+            <div id="otp-area" class="otp-section">
+                <div class="input-group">
+                    <label class="blink" style="color: var(--warning)">OTP / Doğrulama Kodu Gerekli!</label>
+                    <input type="text" id="otp-input" placeholder="123456">
+                </div>
+                <button id="submit-otp-btn" style="background: var(--warning)">
+                    Kodu Gönder
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status Logs -->
+        <div class="card status-panel">
+            <h1>Canlı Durum Takibi</h1>
+            <div class="log-container" id="logs">
+                <div class="log-entry log-info">Bot kontrol paneli hazır. Başlamak için bilgileri girin.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const logs = document.getElementById('logs');
+        const startBtn = document.getElementById('start-btn');
+        const otpArea = document.getElementById('otp-area');
+        const submitOtpBtn = document.getElementById('submit-otp-btn');
+
+        function addLog(message, level) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+
+            if (message.includes("OTP")) {
+                otpArea.style.display = 'block';
+            }
+        }
+
+        socket.on('bot_status', (data) => {
+            addLog(data.message, data.level);
+        });
+
+        startBtn.onclick = () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const refs = document.getElementById('refs').value;
+            
+            socket.emit('start_bot', { email, password, refs });
+            startBtn.disabled = true;
+            startBtn.innerText = 'Bot Çalışıyor...';
+        };
+
+        submitOtpBtn.onclick = () => {
+            const otp = document.getElementById('otp-input').value;
+            socket.emit('submit_otp', { otp });
+            document.getElementById('otp-input').value = '';
+            otpArea.style.display = 'none';
+        };
+    </script>
+</body>
+</html>
