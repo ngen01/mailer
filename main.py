@@ -30,15 +30,22 @@ async def handle_cookies(page):
 
 async def login(page, email, password):
     await report_status("VFS Giriş sayfası açılıyor...")
-    await page.goto(VFS_URL, wait_until="networkidle")
-    await handle_cookies(page)
-    
-    await report_status("Giriş yapılıyor...")
     try:
-        await page.wait_for_selector('input[formcontrolname="username"]', timeout=30000)
-        await page.fill('input[formcontrolname="username"]', email)
+        response = await page.goto(VFS_URL, wait_until="domcontentloaded", timeout=60000)
+        if response:
+            await report_status(f"Sayfa yüklendi (Durum: {response.status})")
+            if response.status == 403:
+                await report_status("Hata: 403 Forbidden - Erişime izin verilmiyor (Cloudflare/Bot engeli olabilir).", "error")
         
-        await page.wait_for_selector('input[formcontrolname="password"]', timeout=3000)
+        await handle_cookies(page)
+        
+        await report_status("Giriş formu bekleniyor...")
+        # Try to wait for the selector more robustly
+        await page.wait_for_selector('input[formcontrolname="username"]', timeout=45000)
+        
+        await report_status("Giriş bilgileri giriliyor...")
+        await page.fill('input[formcontrolname="username"]', email)
+        await page.wait_for_selector('input[formcontrolname="password"]', timeout=5000)
         await page.fill('input[formcontrolname="password"]', password)
         
         await page.click('button.mat-raised-button.mat-primary:has-text("Oturum aç"), button.mat-raised-button.mat-primary:has-text("Sign in")')
