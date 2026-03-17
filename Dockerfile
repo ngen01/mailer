@@ -1,11 +1,5 @@
-# Use Python 3.10 slim as base
-FROM python:3.10-slim
-
-# Install basic system dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
+# Use the official Microsoft Playwright Python image which has everything pre-installed
+FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
 
 # Set working directory
 WORKDIR /app
@@ -13,9 +7,6 @@ WORKDIR /app
 # Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Playwright browsers and THEIR system dependencies
-RUN playwright install --with-deps chromium
 
 # Copy the rest of the application
 COPY . .
