@@ -131,9 +131,24 @@ async def run_bot(email, password, ref_numbers, callback=None):
     await report_status("Bot başlatılıyor...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        
+        # Proxy configuration from environment variables
+        proxy_server = os.getenv("PROXY_SERVER")
+        proxy_username = os.getenv("PROXY_USERNAME")
+        proxy_password = os.getenv("PROXY_PASSWORD")
+        
+        proxy_config = None
+        if proxy_server:
+            proxy_config = {"server": proxy_server}
+            if proxy_username and proxy_password:
+                proxy_config["username"] = proxy_username
+                proxy_config["password"] = proxy_password
+            await report_status(f"Proxy aktif: {proxy_server}")
+
         context = await browser.new_context(
             viewport={'width': 1280, 'height': 800},
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            proxy=proxy_config
         )
         page = await context.new_page()
         await stealth_async(page)
